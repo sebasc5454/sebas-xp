@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sebas XP</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Retro RPG tracker: log real-life XP and level up to 100 in a year.">
+<meta name="theme-color" content="#14141c">
+<meta name="color-scheme" content="dark">
+<!-- installable app (iPhone + Mac) -->
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sebas XP">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+<!-- pixel fonts (cached by the service worker for offline use) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;600;700&display=swap" crossorigin="anonymous">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="loading">LOADING SAVE FILE…</div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="overlay" id="overlay" hidden></div>
+<div class="sheet" id="sheet" hidden></div>
+
+<nav class="nav" aria-label="Sections"><div class="nav-in" role="tablist" id="nav"></div></nav>
+
+<script type="module" src="js/app.js"></script>
+<script>
+/* If the app can't start (usually because index.html was opened as a file instead of through a server), say why. */
+setTimeout(function () {
+  if (window.__sebasBooted) return;
+  var app = document.getElementById('app');
+  var fileMode = location.protocol === 'file:';
+  app.innerHTML = '<div class="px bootmsg"><b>' + (fileMode ? 'OPEN THROUGH A SERVER' : 'COULD NOT START') + '</b>' +
+    (fileMode ? 'Browsers block apps opened straight from a file. In Terminal, cd into this folder and run <code>python3 -m http.server 8000</code>, then open http://localhost:8000' :
+    'Something stopped the app from loading. Try reloading. Your saved data is not affected.') + '</div>';
+}, 4000);
+</script>
+<noscript><div class="bootmsg"><b>JAVASCRIPT IS OFF</b>Sebas XP needs JavaScript to run.</div></noscript>
+</body>
+</html>

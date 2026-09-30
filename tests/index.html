@@ -1,0 +1,18 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sebas XP tests</title>
+<style>
+  :root{color-scheme:dark} body{margin:0;padding:16px;background:#14141c;color:#dbd4c2;font:14px/1.5 ui-monospace,Menlo,monospace}
+  h1{font-size:15px;color:#c7a25b} .pass{color:#7fa36a} .fail{color:#b86660} pre{white-space:pre-wrap}
+</style>
+<h1>SEBAS XP · UNIT TESTS</h1>
+<pre id="out">running…</pre>
+<script type="module">
+  const out = document.getElementById('out'); out.textContent = '';
+  const orig = console.log;
+  console.log = s => { const line = document.createElement('div'); line.textContent = s; line.className = /FAIL/.test(s) ? 'fail' : /^\s+ok/.test(s) ? 'pass' : ''; out.appendChild(line); orig(s); };
+  const { done } = await import('./run.js');
+  const r = await done;
+  document.title = `${r.fail ? '✗' : '✓'} ${r.pass}/${r.pass + r.fail} tests`;
+</script>

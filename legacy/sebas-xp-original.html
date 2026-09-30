@@ -1,0 +1,913 @@
+<title>Sebas XP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-column RPG status screen of notched pixel panels, with a fixed command bar at the bottom */
+:root{
+  --bg:#14141c; --bg-dot:#1c1c27; --panel:#1f1f2b; --panel-2:#282837; --well:#121219;
+  --line:#3b3a50; --line-hi:#55536e; --shade:#0c0c12;
+  --ink:#dbd4c2; --dim:#948fa5; --faint:#625e75;
+  --gold:#c7a25b; --gold-hi:#dfc285; --gold-lo:#7f6433;
+  --good:#7fa36a; --bad:#b86660;
+  --t-aca:#6f93bb; --t-eng:#c08a4e; --t-skl:#86a76f; --t-car:#a584b0; --t-fit:#bb6a63; --t-soc:#5f9c95; --t-dis:#9490ae;
+  --tier1:#9a6f4c; --tier2:#8d93a0; --tier3:#6fa39b; --tier4:#c7a25b; --tier5:#a0668f;
+  --scrim:rgba(8,8,12,.82);
+  --f-display:"Press Start 2P","Courier New",monospace;
+  --f-body:"Pixelify Sans","Trebuchet MS",system-ui,sans-serif;
+  --notch:polygon(0 4px,4px 4px,4px 0,calc(100% - 4px) 0,calc(100% - 4px) 4px,100% 4px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px));
+  color-scheme:dark;
+}
+html,body{background:var(--bg);color:var(--ink)}
+body{
+  font-family:var(--f-body);font-size:16px;line-height:1.35;
+  background-image:radial-gradient(var(--bg-dot) 1px,transparent 1.2px);background-size:8px 8px;
+  -webkit-font-smoothing:none;
+}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:16px 120px;display:flex;flex-direction:column;gap:14px}
+.disp{font-family:var(--f-display);letter-spacing:.02em}
+.px{background:var(--panel);border:3px solid var(--line);clip-path:var(--notch);box-shadow:inset 0 -4px 0 var(--shade),inset 0 3px 0 var(--panel-2)}
+.lbl{font-family:var(--f-display);font-size:9px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+.sechead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px}
+.sechead h2{margin:0;font-family:var(--f-display);font-size:11px;letter-spacing:.06em;color:var(--gold);text-wrap:balance}
+.sechead span{font-size:14px;color:var(--dim)}
+.muted{color:var(--dim)}
+.ic{width:16px;height:16px;flex:none;image-rendering:pixelated;shape-rendering:crispEdges}
+
+/* HUD */
+.hud{padding:16px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.crest{width:72px;height:72px;position:relative;display:grid;place-items:center}
+.crest svg{position:absolute;inset:0;width:100%;height:100%}
+.crest b{position:relative;font-family:var(--f-display);font-size:12px;margin-top:-6px;color:var(--ink);text-shadow:2px 2px 0 var(--shade)}
+.hud-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.hud-name{font-family:var(--f-display);font-size:11px;color:var(--dim);letter-spacing:.1em}
+.hud-lv{font-family:var(--f-display);font-size:26px;line-height:1;color:var(--ink);text-shadow:3px 3px 0 var(--shade)}
+.hud-lv small{font-size:11px;color:var(--dim);margin-right:6px}
+.hud-rank{font-size:17px;color:var(--gold);margin-top:6px}
+.hud-rank span{color:var(--dim);font-size:14px}
+.hud-bar{grid-column:1/-1}
+.sync{font-family:var(--f-display);font-size:8px;color:var(--faint);letter-spacing:.08em}
+.sync.warn{color:var(--bad)}
+
+/* bars */
+.bar{position:relative;height:22px;background:var(--well);border:3px solid var(--line);clip-path:var(--notch);overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;width:0;background:var(--gold);box-shadow:inset 0 3px 0 var(--gold-hi),inset 0 -4px 0 var(--gold-lo);transition:width .6s steps(12,end)}
+.bar::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 2px),var(--well) calc(10% - 2px) 10%);pointer-events:none}
+.bar.thin{height:12px;border-width:2px}
+.bar.thin i{box-shadow:inset 0 2px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.3)}
+.bar.thin::after{background:repeating-linear-gradient(90deg,transparent 0 calc(5% - 1px),var(--well) calc(5% - 1px) 5%)}
+.barmeta{display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:14px;color:var(--dim)}
+.barmeta b{color:var(--ink);font-weight:600}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{padding:10px 10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.stat .v{font-family:var(--f-display);font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .s{font-size:13px;color:var(--dim)}
+.v.good{color:var(--good)} .v.bad{color:var(--bad)}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+/* perfect day */
+.pd{padding:14px;display:flex;flex-direction:column;gap:10px}
+.pd-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pd-top b{font-family:var(--f-display);font-size:12px}
+.pd-list{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border:2px solid var(--line);background:var(--panel-2);font-size:14px;clip-path:var(--notch)}
+.chip.done{border-color:var(--good);color:var(--good)}
+.chip .box{width:10px;height:10px;border:2px solid currentColor;flex:none}
+.chip.done .box{background:currentColor}
+.pd.complete{border-color:var(--gold)}
+
+/* favorites grid */
+.favs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.fav{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:11px 11px 12px;text-align:left;background:var(--panel);border:3px solid var(--line);clip-path:var(--notch);box-shadow:inset 0 -4px 0 var(--shade);min-height:92px;transition:transform .08s steps(2)}
+.fav:hover{border-color:var(--line-hi)}
+.fav:active{transform:translateY(2px);box-shadow:inset 0 -1px 0 var(--shade)}
+.fav .fname{font-size:15px;line-height:1.2;min-width:0;overflow-wrap:anywhere}
+.fav .fx{margin-top:auto;display:flex;justify-content:space-between;width:100%;align-items:center}
+.fav .fx b{font-family:var(--f-display);font-size:10px;color:var(--gold)}
+.fav .fx em{font-style:normal;font-size:13px;color:var(--dim)}
+.fav[disabled]{opacity:.45;cursor:default}
+.empty{padding:18px;text-align:center;color:var(--dim);font-size:15px}
+
+/* trees */
+.mini{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.mrow{display:grid;grid-template-columns:18px 1fr auto;gap:4px 10px;align-items:center}
+.mrow .mn{font-size:15px;display:flex;gap:8px;align-items:baseline;min-width:0}
+.mrow .mn span{color:var(--dim);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .ml{font-family:var(--f-display);font-size:10px}
+.mrow .bar{grid-column:2/-1}
+.tree{padding:14px;display:flex;flex-direction:column;gap:10px}
+.tree-top{display:flex;align-items:center;gap:10px}
+.tree-top .ic{width:24px;height:24px}
+.tree-top h3{margin:0;font-family:var(--f-display);font-size:12px;letter-spacing:.04em}
+.tree-top .tl{margin-left:auto;font-family:var(--f-display);font-size:14px}
+.tree-rank{font-size:16px}
+.ladder{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.rung{padding:6px 4px;font-size:12px;text-align:center;border:2px solid var(--line);color:var(--faint);background:var(--well);clip-path:var(--notch);overflow-wrap:anywhere;line-height:1.15}
+.rung.got{color:var(--dim)}
+.rung.now{color:var(--ink);border-color:currentColor}
+.rung small{display:block;font-family:var(--f-display);font-size:8px;margin-bottom:3px;opacity:.8}
+
+/* log */
+.tools{display:flex;flex-direction:column;gap:10px}
+.search{width:100%;padding:10px 12px;background:var(--well);border:3px solid var(--line);clip-path:var(--notch);font-size:16px}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.fbtn{padding:6px 9px;border:2px solid var(--line);background:var(--panel);font-size:14px;display:inline-flex;gap:6px;align-items:center;clip-path:var(--notch)}
+.fbtn[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+.group{padding:0;overflow:hidden}
+.ghead{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--panel-2);border-bottom:3px solid var(--line)}
+.ghead h3{margin:0;font-family:var(--f-display);font-size:11px;letter-spacing:.05em}
+.ghead span{margin-left:auto;font-size:14px;color:var(--dim)}
+.row{display:grid;grid-template-columns:34px 1fr 34px auto;align-items:center;gap:6px;padding:7px 8px 7px 6px;border-bottom:2px solid var(--panel-2)}
+.row:last-child{border-bottom:0}
+.row .rname{font-size:15px;line-height:1.25;min-width:0;overflow-wrap:anywhere}
+.tag{display:inline-block;font-family:var(--f-display);font-size:8px;letter-spacing:.06em;padding:3px 5px;margin-left:6px;vertical-align:2px;border:1px solid currentColor;color:var(--dim)}
+.tag.today{color:var(--good)}
+.tag.pdh{color:var(--gold)}
+.iconbtn{width:34px;height:34px;display:grid;place-items:center;background:none;border:0;color:var(--faint);font-size:18px}
+.iconbtn:hover{color:var(--ink)}
+.star[aria-pressed="true"]{color:var(--gold)}
+.logbtn{min-width:64px;padding:8px 10px;font-family:var(--f-display);font-size:10px;background:var(--panel-2);border:2px solid var(--gold-lo);color:var(--gold);clip-path:var(--notch);box-shadow:inset 0 -3px 0 var(--shade)}
+.logbtn:hover{border-color:var(--gold)}
+.logbtn:active{box-shadow:none;transform:translateY(1px)}
+.logbtn[disabled]{color:var(--faint);border-color:var(--line);cursor:default}
+.custom{padding:14px;display:flex;flex-direction:column;gap:10px}
+.custom summary{cursor:pointer;font-family:var(--f-display);font-size:11px;color:var(--gold);list-style:none}
+.custom summary::-webkit-details-marker{display:none}
+.fgrid{display:grid;grid-template-columns:1fr 150px 90px;gap:8px}
+@media (max-width:560px){.fgrid{grid-template-columns:1fr 1fr}.fgrid .span{grid-column:1/-1}}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field input,.field select{width:100%;padding:9px 10px;background:var(--well);border:2px solid var(--line);font-size:16px;min-width:0}
+.check{display:flex;align-items:center;gap:8px;font-size:15px}
+.check input{width:18px;height:18px;accent-color:var(--gold)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:10px 14px;font-family:var(--f-display);font-size:10px;letter-spacing:.04em;background:var(--panel-2);border:2px solid var(--line-hi);clip-path:var(--notch);box-shadow:inset 0 -3px 0 var(--shade)}
+.btn.gold{border-color:var(--gold);color:var(--gold)}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn[disabled]{opacity:.4;cursor:default}
+
+/* history */
+.chart{padding:14px 14px 10px}
+.cwrap{position:relative;height:140px;display:grid;grid-template-columns:repeat(14,1fr);grid-template-rows:1fr;gap:4px;align-items:end;margin-top:12px;border-bottom:2px solid var(--line)}
+.cbar{background:var(--panel-2);position:relative;min-height:2px}
+.cbar.hit{background:var(--gold);box-shadow:inset 0 2px 0 var(--gold-hi)}
+.cbar.part{background:var(--gold-lo)}
+.cbar.today{outline:2px solid var(--ink);outline-offset:1px}
+.pace{position:absolute;left:0;right:0;border-top:2px dashed var(--dim);pointer-events:none}
+.pace span{position:absolute;right:0;top:-18px;font-family:var(--f-display);font-size:8px;color:var(--dim);background:var(--panel);padding:0 3px}
+.cdays{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;margin-top:6px}
+.cdays span{text-align:center;font-family:var(--f-display);font-size:8px;color:var(--faint)}
+.day{padding:0;overflow:hidden}
+.dhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:var(--panel-2);border-bottom:3px solid var(--line)}
+.dhead b{font-family:var(--f-display);font-size:10px}
+.dhead span{font-family:var(--f-display);font-size:10px;color:var(--gold)}
+.hrow{display:grid;grid-template-columns:44px 12px 1fr auto auto;gap:8px;align-items:center;padding:7px 10px 7px 14px;border-bottom:2px solid var(--panel-2);font-size:15px}
+.hrow:last-child{border-bottom:0}
+.hrow time{font-size:13px;color:var(--dim)}
+.dot{width:10px;height:10px}
+.hrow .hx{font-family:var(--f-display);font-size:9px;color:var(--gold)}
+.hrow .hn{min-width:0;overflow-wrap:anywhere}
+.hrow .del{font-size:13px;padding:4px 8px;background:none;border:2px solid transparent;color:var(--faint)}
+.hrow .del:hover{color:var(--bad)}
+.hrow .del.arm{border-color:var(--bad);color:var(--bad);font-family:var(--f-display);font-size:8px}
+
+/* setup */
+.set{padding:14px;display:flex;flex-direction:column;gap:12px}
+.set h3{margin:0;font-family:var(--f-display);font-size:11px;color:var(--gold)}
+.set p{margin:0;color:var(--dim);font-size:15px;max-width:60ch}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:15px}
+.kv dt{color:var(--dim)} .kv dd{margin:0}
+.plist{display:flex;flex-direction:column;gap:6px}
+.pitem{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 10px;background:var(--well);border:2px solid var(--line);font-size:15px}
+
+/* nav */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--panel);border-top:3px solid var(--line);padding:0 8px calc(6px + env(safe-area-inset-bottom,0px))}
+.nav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.tab{padding:9px 2px 8px;background:none;border:0;border-top:3px solid transparent;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--faint);font-family:var(--f-display);font-size:8px;letter-spacing:.05em}
+.tab .ic{width:18px;height:18px}
+.tab[aria-selected="true"]{color:var(--gold)}
+.tab[aria-selected="true"]{border-top-color:var(--gold)}
+
+/* toasts, float, overlay, sheet */
+.toasts{position:fixed;left:0;right:0;bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding:0 16px}
+.toast{pointer-events:auto;display:flex;align-items:center;gap:12px;max-width:100%;padding:9px 12px;background:var(--panel-2);border:3px solid var(--line-hi);clip-path:var(--notch);font-size:15px;box-shadow:inset 0 -3px 0 var(--shade);animation:tin .18s steps(3)}
+.toast.gold{border-color:var(--gold);color:var(--gold-hi)}
+.toast button{background:none;border:0;font-family:var(--f-display);font-size:9px;color:var(--gold);padding:4px}
+@keyframes tin{from{transform:translateY(8px);opacity:0}}
+.floatxp{position:fixed;z-index:50;pointer-events:none;font-family:var(--f-display);font-size:13px;color:var(--gold-hi);text-shadow:2px 2px 0 var(--shade);animation:flt .9s steps(9) forwards}
+@keyframes flt{to{transform:translateY(-46px);opacity:0}}
+.overlay{position:fixed;inset:0;z-index:60;background:var(--scrim);display:grid;place-items:center;padding:16px}
+.ov{position:relative;width:min(420px,100%);padding:26px 20px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;border-color:var(--gold);animation:pop .35s steps(5)}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+.ov h2{margin:0;font-family:var(--f-display);font-size:18px;color:var(--gold-hi);text-shadow:3px 3px 0 var(--shade);letter-spacing:.04em}
+.ov .big{font-family:var(--f-display);font-size:40px;line-height:1;text-shadow:4px 4px 0 var(--shade)}
+.ov .sub{font-size:18px;color:var(--gold)}
+.ov ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:15px;color:var(--dim)}
+.ov ul b{color:var(--ink);font-weight:600}
+.ov .crest{width:96px;height:96px}
+.ov .crest b{font-size:16px}
+.spark{position:absolute;left:50%;top:42%;z-index:1;width:6px;height:6px;background:var(--gold-hi);animation:burst .9s steps(8) forwards}
+@keyframes burst{to{transform:translate(var(--dx),var(--dy));opacity:0}}
+.sheet{position:fixed;inset:0;z-index:55;background:var(--scrim);display:grid;align-items:end;justify-items:center;padding:16px}
+.sheet .px{width:min(520px,100%);padding:16px;display:flex;flex-direction:column;gap:12px;margin-bottom:env(safe-area-inset-bottom,0px)}
+.sheet h3{margin:0;font-family:var(--f-display);font-size:11px;color:var(--gold);line-height:1.5}
+.loading{font-family:var(--f-display);font-size:9px;color:var(--dim);text-align:center;padding:6px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap" id="app">
+  <section id="v-home" class="view">
+    <div class="px hud" id="hud">
+      <div class="crest" id="hud-crest"></div>
+      <div>
+        <div class="hud-top"><span class="hud-name">SEBAS</span><span class="sync" id="sync">LOADING</span></div>
+        <div class="hud-lv" id="hud-lv"><small>LV</small>1</div>
+        <div class="hud-rank" id="hud-rank">Apprentice <span>· Tier I</span></div>
+      </div>
+      <div class="hud-bar">
+        <div class="bar"><i id="hud-fill"></i></div>
+        <div class="barmeta"><span id="hud-into"><b>0</b> / 300 XP</span><span id="hud-total">0 total XP</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="overlay" id="overlay" hidden></div>
+<div class="sheet" id="sheet" hidden></div>
+
+<nav class="nav" aria-label="Sections"><div class="nav-in" role="tablist" id="nav"></div></nav>
+
+<script>
+(function(){
+"use strict";
+/* ---------- constants ---------- */
+const START='2026-09-29', PACE=154, RESET_HOUR=4, XP_TO_100=56175, LOCAL_KEY='sebasxp_save_v1';
+const W=[300,450,575,700,825], WSUM=27675;
+const TIERS=[['I','Apprentice','--tier1'],['II','Technician','--tier2'],['III','Engineer','--tier3'],['IV','Senior Engineer','--tier4'],['V','Chief Engineer','--tier5']];
+const TREES=[
+  {id:'aca',name:'Academics',color:'--t-aca',T:15000,icon:'book',ranks:['Student','Scholar','Analyst','Theorist','Master']},
+  {id:'eng',name:'Engineering',color:'--t-eng',T:5000,icon:'gear',ranks:['Tinkerer','Builder','Designer','Innovator','Architect']},
+  {id:'skl',name:'Skills',color:'--t-skl',T:5000,icon:'bulb',ranks:['Novice','Learner','Practitioner','Specialist','Expert']},
+  {id:'car',name:'Career',color:'--t-car',T:5000,icon:'case',ranks:['Candidate','Intern-Ready','Contender','Professional','Executive']},
+  {id:'fit',name:'Fitness',color:'--t-fit',T:12000,icon:'bell',ranks:['Rookie','Starter','Captain','Beast','Elite']},
+  {id:'soc',name:'Social',color:'--t-soc',T:3500,icon:'heart',ranks:['Solo','Connected','Reliable','Respected','Leader']},
+  {id:'dis',name:'Discipline',color:'--t-dis',T:11500,icon:'glass',ranks:['Recruit','Consistent','Locked In','Relentless','Unbreakable']}
+];
+TREES.forEach(t=>{t.costs=W.map(w=>Math.max(10,Math.round(w*t.T/WSUM/5)*5));});
+const TREE=Object.fromEntries(TREES.map(t=>[t.id,t]));
+
+/* [tree, id, name, xp, once] */
+const DEFAULT_ACTS=[
+ ['aca','study','Focused study block (50 min, phone away)',20],
+ ['aca','lecture','Watched a lecture with full focus',15],
+ ['aca','preview','Previewed the next lecture',10],
+ ['aca','hw','Homework set submitted',30],
+ ['aca','hwEarly','Homework done a day early (bonus)',15],
+ ['aca','noAI','Attempted every problem before using AI',20],
+ ['aca','phys','Physics 2 concept session',25],
+ ['aca','practice','Extra practice problems (not assigned)',20],
+ ['aca','guide','Made a formula sheet or study guide',30],
+ ['aca','teach','Explained a concept to someone else',20],
+ ['aca','group','Study group session',25],
+ ['aca','oh','Office hours or tutoring',25],
+ ['aca','lab','Lab report submitted',50],
+ ['aca','examFix','Reworked every missed exam problem',30],
+ ['aca','quizA','Quiz: A',50],
+ ['aca','quizB','Quiz: B',30],
+ ['aca','examA','Exam: A',200],
+ ['aca','examB','Exam: B',120],
+ ['aca','examC','Exam: C',50],
+ ['aca','allClass','Attended every class this week',40],
+ ['aca','noLate','Zero late assignments this week',30],
+ ['aca','advisor','Met with academic advisor',40],
+ ['aca','register','Registered for next semester',50],
+ ['aca','courseA','Final course grade: A',300],
+ ['aca','courseB','Final course grade: B',150],
+ ['aca','gpa','Semester GPA 3.5+',750],
+ ['aca','deans',"Made the Dean's List",500],
+
+ ['eng','build','1 hr hands-on project work (Arduino, build, CAD)',30],
+ ['eng','plan','Chose a project and wrote the plan + parts list',75],
+ ['eng','parts','Ordered parts or materials',25],
+ ['eng','debug','Debugged and fixed a real problem',40],
+ ['eng','milestone','Project milestone (subsystem works, first test)',100],
+ ['eng','fab','3D printed or fabricated a part you designed',75],
+ ['eng','circuit','Designed a circuit schematic',40],
+ ['eng','cadReal','Modeled a real object in CAD (practice)',40],
+ ['eng','github','Pushed project code to GitHub',20],
+ ['eng','notebook','Design notebook entry',15],
+ ['eng','finish','Finished a full project',400],
+ ['eng','document','Documented a project (photos + write-up)',100],
+ ['eng','present','Presented a project to others',75],
+ ['eng','teardown','Product teardown or reverse-engineering',40],
+ ['eng','fix','Fixed something broken (car, bike, appliance)',40],
+ ['eng','pc','Built or upgraded a PC',100],
+ ['eng','clubMtg','Engineering club or team meeting',25],
+ ['eng','teamTask','Contributed to a team design task',50],
+ ['eng','joinClub','Joined an engineering club or team',200,1],
+ ['eng','fsae','FSAE reapplication submitted',150,1],
+ ['eng','compIn','Entered a hackathon or design competition',200],
+ ['eng','compWin','Placed in a competition',400],
+
+ ['skl','learn','1 hr structured learning (course or tutorial)',30],
+ ['skl','code','1 hr coding (Python, MATLAB, C++)',30],
+ ['skl','module','Course module or lesson completed',25],
+ ['skl','course','Full online course completed',250],
+ ['skl','matlabHw','Used MATLAB on a homework problem',25],
+ ['skl','cadTech','Learned a new CAD feature or technique',20],
+ ['skl','tool','Learned a new tool hands-on (solder, 3D printer, scope, lathe)',50],
+ ['skl','workshop','Attended a workshop or seminar',40],
+ ['skl','shop','Makerspace or machine shop training',150],
+ ['skl','research','1 hr engineering research or reading',20],
+ ['skl','book','Read a chapter of a technical book',25],
+ ['skl','learnLog','Wrote down what you learned today',10],
+ ['skl','mlOnramp','MATLAB Onramp certificate',150,1],
+ ['skl','simOnramp','Simulink Onramp certificate',150,1],
+ ['skl','cswa','SolidWorks CSWA certification',500,1],
+ ['skl','cswp','SolidWorks CSWP certification',800,1],
+ ['skl','cert','Other certification earned',300],
+ ['skl','profEmail','Emailed a professor about research',75],
+ ['skl','furiApp','FURI application submitted',300],
+ ['skl','researchIn','Joined a research lab or got into FURI',750,1],
+
+ ['car','intApp','Internship application sent',30],
+ ['car','jobApp','Part-time job application sent',20],
+ ['car','cover','Tailored cover letter written',25],
+ ['car','followUp','Followed up on an application',10],
+ ['car','company','Researched a target company or role',20],
+ ['car','resume','Resume or LinkedIn update',40],
+ ['car','resumeProj','Added a project to resume or portfolio',50],
+ ['car','portfolio','Built an engineering portfolio',300,1],
+ ['car','connect','Connected with an engineer or recruiter (with a message)',15],
+ ['car','network','Networking chat or informational interview',60],
+ ['car','infoSession','Company info session or engineering event',50],
+ ['car','society','Joined a professional society (ASME, AIAA)',150,1],
+ ['car','star','Wrote STAR interview stories',40],
+ ['car','pitch','Wrote and practiced an elevator pitch',40,1],
+ ['car','mock','Mock interview at career services',75],
+ ['car','fair','Career fair',100],
+ ['car','interview','Interview',150],
+ ['car','thanks','Sent a thank-you after an interview',20],
+ ['car','shift','Worked a job shift',20],
+ ['car','jobOffer','Job offer',500],
+ ['car','intOffer','Internship offer',1000],
+ ['car','scholar','Scholarship application submitted',50],
+ ['car','abroad','Researched study abroad or programs (1 hr)',20],
+ ['car','ucList','UC transfer: school list finalized',100,1],
+ ['car','ucReq','UC transfer: checked major requirements for a school',50],
+ ['car','ucPiq','UC transfer: PIQ essay drafted',75],
+ ['car','ucPiqF','UC transfer: PIQ essay finalized',100],
+ ['car','ucSec','UC transfer: application section done',50],
+ ['car','ucSubmit','UC transfer: application submitted',400],
+ ['car','ucAdmit','UC transfer: admitted',1500],
+
+ ['fit','conditioning','Rugby morning conditioning',30],
+ ['fit','rugbyPrac','Rugby practice, full effort',30],
+ ['fit','rugbySkill','Rugby skill work on your own',20],
+ ['fit','match','Played in a match',50],
+ ['fit','try','Scored a try',50],
+ ['fit','lift','Program lift, full effort',30],
+ ['fit','runSwim','Run or swim',25],
+ ['fit','sprint','Sprint or speed session',30],
+ ['fit','hike','Hike',30],
+ ['fit','recovery','Recovery session (stretch, massage gun)',15],
+ ['fit','steps','Step goal hit',10],
+ ['fit','protein','Hit protein target',10],
+ ['fit','water','Hit water goal',5],
+ ['fit','pr','PR',50],
+ ['fit','progWeek','Every program session done this week',75],
+ ['fit','block','Completed a full training block',150],
+
+ ['soc','family','Real conversation with family',20],
+ ['soc','close','Quality time or call with someone close',20],
+ ['soc','friend','Reached out to a friend',20],
+ ['soc','invite','Invited someone to do something',30],
+ ['soc','hangout','Social event or hangout',40],
+ ['soc','campus','Went to a campus event',30],
+ ['soc','newPerson','Met someone new',40],
+ ['soc','speakUp','Spoke up in class or a group',15],
+ ['soc','help','Helped someone out',25],
+ ['soc','hobby','Hobby session (fishing, etc.)',30],
+ ['soc','newThing','Tried a new hobby or experience',50],
+ ['soc','groupJoin','Joined a non-engineering club or group',100],
+
+ ['dis','sleep','7+ hrs sleep',15],
+ ['dis','bedtime','In bed by target time',15],
+ ['dis','alarm','Up on the first alarm',15],
+ ['dis','noPhoneAM','No phone first 30 min after waking',15],
+ ['dis','hardFirst','Hardest task first, before phone',20],
+ ['dis','stack','Daily stack taken',10],
+ ['dis','planTmrw','Planned tomorrow the night before',10],
+ ['dis','weekly','Weekly review and plan (Sunday)',50],
+ ['dis','cook','Cooked instead of junk food',15],
+ ['dis','mealPrep','Meal prepped for multiple days',30],
+ ['dis','noJunk','No junk food all day',10],
+ ['dis','screen','Screen time under target',15],
+ ['dis','phoneOut','Phone out of the bedroom overnight',10],
+ ['dis','admin','Admin knocked out (emails, calls, forms)',20],
+ ['dis','procrast',"Finally did something you'd been putting off",30],
+ ['dis','clean','Cleaned space, dishes, trash',10],
+ ['dis','laundry','Laundry done',10],
+ ['dis','groom','Groomed and dressed sharp',10],
+ ['dis','budget','Checked your budget and spending',20],
+ ['dis','read','Read 20 min (non-school)',15],
+ ['dis','journal','Journaled or reflected (5 min)',10],
+ ['dis','sails','SAILS setup completed',50,1]
+];
+const DEFAULT_SETTINGS={
+  v:1,startDate:START,sound:true,showHidden:false,
+  favorites:['study','lecture','hw','noAI','build','learn','intApp','conditioning','rugbyPrac','lift','family','friend','sleep','alarm','hardFirst','stack','planTmrw','cook','clean'],
+  perfect:['sleep','alarm','hardFirst','stack','planTmrw'],
+  overrides:{},hidden:[],onceOverrides:{},custom:[]
+};
+
+/* ---------- pixel art ---------- */
+const ICONS={
+ book:['.##..##.','#..##..#','#..##..#','#..##..#','#..##..#','#..##..#','.##..##.','...##...'],
+ gear:['...##...','.######.','.##..##.','###..###','###..###','.##..##.','.######.','...##...'],
+ bulb:['..####..','.#....#.','.#....#.','.#....#.','..#..#..','...##...','..####..','...##...'],
+ case:['..####..','..#..#..','########','#......#','########','#......#','#......#','########'],
+ bell:['........','.#....#.','##....##','########','##....##','.#....#.','........','........'],
+ heart:['........','.##..##.','########','########','.######.','..####..','...##...','........'],
+ glass:['########','.#....#.','..#..#..','...##...','...##...','..#..#..','.#....#.','########'],
+ star:['...##...','...##...','########','.######.','..####..','.##..##.','.#....#.','........'],
+ home:['...##...','..####..','.######.','########','.#....#.','.#.##.#.','.#.##.#.','.######.'],
+ list:['........','##.#####','........','##.#####','........','##.#####','........','........'],
+ scroll:['.######.','#......#','.#.###.#','.#.....#','.#.###.#','.#.....#','.######.','........'],
+ cog:['#.#..#.#','.######.','##....##','.#.##.#.','.#.##.#.','##....##','.######.','#.#..#.#']
+};
+function pix(name,color){
+  const m=ICONS[name];let r='';
+  m.forEach((row,y)=>{for(let x=0;x<row.length;x++){if(row[x]==='#')r+=`<rect x="${x}" y="${y}" width="1" height="1"/>`;}});
+  return `<svg class="ic" viewBox="0 0 8 8" aria-hidden="true" style="fill:${color||'currentColor'}">${r}</svg>`;
+}
+const SHIELD=['XXXXXXXXXXXX','XffffffffffX','XfhhhhhhhhfX','XfhffffffffX','XfhffffffffX','XffffffffffX','XffffffffffX','.XffffffffX.','.XffffffffX.','..XffffffX..','...XffffX...','....XXXX....'];
+function crest(tierIdx){
+  const c=`var(${TIERS[tierIdx][2]})`;let r='';
+  SHIELD.forEach((row,y)=>{for(let x=0;x<12;x++){const ch=row[x];
+    if(ch==='X')r+=`<rect x="${x}" y="${y}" width="1" height="1" style="fill:${c}"/>`;
+    else if(ch==='f')r+=`<rect x="${x}" y="${y}" width="1" height="1" style="fill:${c};opacity:.28"/>`;
+    else if(ch==='h')r+=`<rect x="${x}" y="${y}" width="1" height="1" style="fill:${c};opacity:.55"/>`;}});
+  return `<svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">${r}</svg><b>${TIERS[tierIdx][0]}</b>`;
+}
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const gameDate=ts=>ymd(new Date(ts-RESET_HOUR*3600e3));
+function parseYmd(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d,12);}
+function addDays(s,n){const d=parseYmd(s);d.setDate(d.getDate()+n);return ymd(d);}
+function diffDays(a,b){const A=parseYmd(a),B=parseYmd(b);return Math.round((Date.UTC(B.getFullYear(),B.getMonth(),B.getDate())-Date.UTC(A.getFullYear(),A.getMonth(),A.getDate()))/864e5);}
+const MON=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'],DOW=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+function dayLabel(s){const d=parseYmd(s);return `${DOW[d.getDay()]} ${MON[d.getMonth()]} ${d.getDate()}`;}
+function fmtEta(s){const d=parseYmd(s);return `${MON[d.getMonth()]} ${d.getDate()} '${String(d.getFullYear()).slice(2)}`;}
+const fmt=n=>n.toLocaleString('en-US');
+const cv=name=>`var(${name})`;
+
+/* ---------- state ---------- */
+const state={settings:clone(DEFAULT_SETTINGS),days:{},ready:false,mode:'loading',tab:'home',filter:'all',q:'',histShown:14};
+function clone(o){return JSON.parse(JSON.stringify(o));}
+let ACT={};
+function buildActs(){
+  const s=state.settings,A={};
+  DEFAULT_ACTS.forEach(([tree,id,name,xp,once])=>{A[id]={id,tree,name,xp,once:!!once,custom:false};});
+  (s.custom||[]).forEach(c=>{if(TREE[c.tree])A[c.id]={id:c.id,tree:c.tree,name:c.name,xp:c.xp,once:!!c.once,custom:true};});
+  Object.entries(s.overrides||{}).forEach(([id,xp])=>{if(A[id])A[id].xp=xp;});
+  Object.entries(s.onceOverrides||{}).forEach(([id,v])=>{if(A[id]&&!A[id].custom)A[id].once=!!v;});
+  const hid=new Set(s.hidden||[]);Object.values(A).forEach(a=>a.hidden=hid.has(a.id));
+  ACT=A;
+}
+function allEntries(){const out=[];for(const d in state.days)for(const e of state.days[d])out.push(e);return out;}
+function dayBase(date){return (state.days[date]||[]).reduce((s,e)=>s+(e.k==='bonus'?0:e.x),0);}
+function dayTotal(date){return (state.days[date]||[]).reduce((s,e)=>s+e.x,0);}
+function claimed(){const s=new Set();allEntries().forEach(e=>{if(e.a)s.add(e.a);});return s;}
+function todayCounts(){const m={};(state.days[gameDate(Date.now())]||[]).forEach(e=>{if(e.a)m[e.a]=(m[e.a]||0)+1;});return m;}
+
+/* ---------- leveling ---------- */
+const overallCost=L=>W[Math.min(4,Math.floor((L-1)/20))];
+function levelOf(xp,costFn,max){let L=1,rem=xp;while(L<max){const c=costFn(L);if(rem>=c){rem-=c;L++;}else return {L,into:rem,need:c,maxed:false};}return {L:max,into:0,need:0,maxed:true};}
+const tierIdx=L=>Math.min(4,Math.floor((L-1)/20));
+const rankIdx=L=>Math.min(4,Math.floor((L-1)/10));
+function snapshot(){
+  let total=0;const tx={};TREES.forEach(t=>tx[t.id]=0);
+  allEntries().forEach(e=>{total+=e.x;if(tx[e.t]!==undefined)tx[e.t]+=e.x;});
+  const o=levelOf(total,overallCost,100);const trees={};
+  TREES.forEach(t=>{trees[t.id]=Object.assign(levelOf(tx[t.id],L=>t.costs[rankIdx(L)],50),{xp:tx[t.id]});});
+  return {total,o,trees};
+}
+function streakEnding(date){let n=0,d=date;while(dayBase(d)>=100){n++;d=addDays(d,-1);if(n>4000)break;}return n;}
+function currentStreak(){const t=gameDate(Date.now());return dayBase(t)>=100?streakEnding(t):streakEnding(addDays(t,-1));}
+
+/* ---------- bonuses ---------- */
+const BONUS={perfect:{n:'Perfect Day',x:25},streak7:{n:'7-Day Streak',x:100},streak30:{n:'30-Day Streak',x:500}};
+function reconcile(date){
+  const entries=state.days[date]||[];
+  const logged=new Set(entries.filter(e=>e.k!=='bonus'&&e.a).map(e=>e.a));
+  const want=new Set();
+  const habits=(state.settings.perfect||[]).filter(id=>ACT[id]);
+  if(habits.length&&habits.every(id=>logged.has(id)))want.add('perfect');
+  if(dayBase(date)>=100){const s=streakEnding(date);if(s%7===0)want.add('streak7');if(s%30===0)want.add('streak30');}
+  const have=new Map(entries.filter(e=>e.k==='bonus').map(e=>[e.b,e]));
+  const add=[],remove=[];
+  want.forEach(b=>{if(!have.has(b)){const e={id:uid(),ts:Date.now(),a:null,n:BONUS[b].n,t:'dis',x:BONUS[b].x,k:'bonus',b};add.push(e);}});
+  have.forEach((e,b)=>{if(!want.has(b))remove.push(e.id);});
+  return {add,remove};
+}
+
+/* ---------- storage ---------- */
+let db=null,downloads=null,chain=Promise.resolve(),pending=0;const dirty={};let settingsDirty=0;
+let gotDays=false,gotSettings=false;
+function setSync(txt,warn){const el=$('#sync');if(el){el.textContent=txt;el.classList.toggle('warn',!!warn);}}
+function syncLabel(){if(state.mode==='local')setSync('SAVED ON THIS DEVICE');else if(state.mode==='db')setSync(pending?'SAVING':'SAVED');else setSync('LOADING');}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+async function retry(fn){try{return await fn();}catch(e){if(e&&e.code==='unavailable'){await sleep(400+Math.random()*800);return fn();}throw e;}}
+function enqueue(fn){
+  pending++;syncLabel();
+  chain=chain.then(fn).catch(e=>{console.error(e);setSync('SAVE FAILED',true);
+    const msg=e&&e.code==='quota_exceeded'?'Storage is full. Export your log, then clear old days in Setup.':'A save failed. Check your connection; the next log will try again.';
+    toast(msg);}).finally(()=>{pending--;syncLabel();});
+  return chain;
+}
+function saveLocal(){try{localStorage.setItem(LOCAL_KEY,JSON.stringify({settings:state.settings,days:state.days}));}catch(e){}}
+function saveSettings(){
+  buildActs();
+  if(state.mode==='local'){saveLocal();return;}
+  settingsDirty++;
+  enqueue(async()=>{try{await retry(()=>db.doc('config/settings').set(clone(state.settings)));}finally{settingsDirty--;}});
+}
+function mergeSettings(s){const out=Object.assign(clone(DEFAULT_SETTINGS),s||{});['favorites','perfect','hidden','custom'].forEach(k=>{if(!Array.isArray(out[k]))out[k]=clone(DEFAULT_SETTINGS[k]);});if(typeof out.overrides!=='object'||!out.overrides)out.overrides={};if(typeof out.onceOverrides!=='object'||!out.onceOverrides)out.onceOverrides={};return out;}
+function maybeReady(){if(!state.ready&&gotDays&&gotSettings){state.ready=true;syncLabel();render();}}
+async function initStore(){
+  let d=null;
+  try{d=window.claude&&window.claude.use?await window.claude.use('db'):null;}catch(e){d=null;}
+  try{downloads=window.claude&&window.claude.use?await window.claude.use('downloads'):null;}catch(e){downloads=null;}
+  if(!d){
+    state.mode='local';
+    try{const raw=localStorage.getItem(LOCAL_KEY);if(raw){const o=JSON.parse(raw);state.settings=mergeSettings(o.settings);state.days=o.days||{};}}catch(e){}
+    buildActs();state.ready=true;syncLabel();render();return;
+  }
+  db=d;state.mode='db';syncLabel();
+  db.doc('config/settings').onSnapshot(snap=>{
+    if(!settingsDirty){state.settings=mergeSettings(snap.exists?snap.data():null);buildActs();}
+    gotSettings=true;maybeReady();if(state.ready)render();
+  },err=>{console.error(err);gotSettings=true;maybeReady();});
+  db.collection('days').onSnapshot(snap=>{
+    const next={};snap.docs.forEach(doc=>{const b=doc.data();if(b&&Array.isArray(b.entries)&&b.entries.length)next[doc.id]=b.entries.slice();});
+    Object.keys(dirty).forEach(date=>{if(state.days[date])next[date]=state.days[date];else delete next[date];});
+    state.days=next;gotDays=true;maybeReady();if(state.ready)render();
+  },err=>{console.error(err);setSync('OFFLINE',true);toast('Lost the connection to your save file. Reload the page to reconnect.');});
+}
+
+/* ---------- sound ---------- */
+let actx=null;
+function tone(freq,start,dur,vol){
+  if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}}
+  const o=actx.createOscillator(),g=actx.createGain();o.type='square';o.frequency.value=freq;
+  const t=actx.currentTime+start;g.gain.setValueAtTime(vol||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(actx.destination);o.start(t);o.stop(t+dur+.02);
+}
+function sfx(kind){
+  if(!state.settings.sound)return;
+  if(kind==='blip'){tone(660,0,.07);tone(990,.06,.09);}
+  else if(kind==='small'){[587,784,988].forEach((f,i)=>tone(f,i*.07,.1));}
+  else if(kind==='level'){[523,659,784,1047].forEach((f,i)=>tone(f,i*.09,.14));tone(1047,.4,.35,.04);}
+  else if(kind==='rank'){[392,523,659,784,659,784,1047].forEach((f,i)=>tone(f,i*.1,.16));tone(1319,.75,.6,.04);}
+}
+
+/* ---------- UI feedback ---------- */
+function toast(msg,opt){
+  opt=opt||{};const box=$('#toasts');const el=document.createElement('div');el.className='toast'+(opt.gold?' gold':'');
+  el.innerHTML=`<span>${esc(msg)}</span>`;
+  if(opt.undo){const b=document.createElement('button');b.textContent='UNDO';b.onclick=()=>{opt.undo();el.remove();};el.appendChild(b);}
+  box.appendChild(el);while(box.children.length>3)box.firstChild.remove();
+  setTimeout(()=>el.remove(),opt.undo?6000:3200);
+}
+function floatXP(el,x){
+  if(!el||!el.getBoundingClientRect)return;const r=el.getBoundingClientRect();
+  const f=document.createElement('div');f.className='floatxp';f.textContent=`+${x} XP`;
+  f.style.left=Math.max(8,Math.min(window.innerWidth-110,r.left+r.width/2-40))+'px';f.style.top=(r.top-6)+'px';
+  document.body.appendChild(f);setTimeout(()=>f.remove(),950);
+}
+function showOverlay(o){
+  const ov=$('#overlay');let head='',body='';
+  const lines=o.lines.map(l=>`<li>${pix(TREE[l.t].icon,cv(TREE[l.t].color))} <b>${esc(TREE[l.t].name)}</b> ${l.rank?`ranked up to <b>${esc(l.rank)}</b>`:'reached'} LV ${l.L}</li>`).join('');
+  if(o.kind==='rank'){head=`<h2>RANK UP!</h2><div class="crest">${crest(o.tier)}</div><div class="big">LV ${o.L}</div><div class="sub">${esc(TIERS[o.tier][1])} · Tier ${TIERS[o.tier][0]}</div>`;}
+  else if(o.kind==='level'){head=`<h2>${o.L>=100?'MAX LEVEL':'LEVEL UP!'}</h2><div class="big">LV ${o.L}</div><div class="sub">${esc(TIERS[o.tier][1])}</div>`;}
+  else{head=`<h2>SKILL RANK UP!</h2>`;}
+  const sparks=Array.from({length:18},(_,i)=>{const a=i/18*Math.PI*2,d=110+Math.random()*60;return `<span class="spark" style="--dx:${Math.round(Math.cos(a)*d)}px;--dy:${Math.round(Math.sin(a)*d)}px"></span>`;}).join('');
+  body=`${lines?`<ul>${lines}</ul>`:''}<button class="btn gold" id="ov-ok">CONTINUE</button>`;
+  ov.innerHTML=`${sparks}<div class="px ov" role="dialog" aria-modal="true" aria-label="Level up">${head}${body}</div>`;
+  ov.hidden=false;const ok=$('#ov-ok');ok.focus();ok.onclick=()=>{ov.hidden=true;ov.innerHTML='';};
+}
+function animateHud(beforePct,levels){
+  const el=$('#hud-fill');if(!el)return;const target=el.style.width;
+  el.style.transition='none';el.style.width=beforePct+'%';void el.offsetWidth;
+  el.style.transition='';el.style.width='100%';
+  setTimeout(()=>{el.style.transition='none';el.style.width='0%';void el.offsetWidth;el.style.transition='';el.style.width=target;},levels>1?750:650);
+}
+function celebrate(b,a,gained,bonus,el){
+  floatXP(el,gained);
+  const lines=[];
+  TREES.forEach(t=>{const lb=b.trees[t.id].L,la=a.trees[t.id].L;if(la>lb){const rb=rankIdx(lb),ra=rankIdx(la);lines.push({t:t.id,L:la,rank:ra>rb?t.ranks[ra]:null});}});
+  if(a.o.L>b.o.L){
+    const tb=tierIdx(b.o.L),ta=tierIdx(a.o.L);
+    const bp=b.o.maxed?100:b.o.into/b.o.need*100;animateHud(bp,a.o.L-b.o.L);
+    setTimeout(()=>{showOverlay({kind:ta>tb?'rank':'level',L:a.o.L,tier:ta,lines});sfx(ta>tb?'rank':'level');},state.tab==='home'?700:0);
+  }else if(lines.some(l=>l.rank)){showOverlay({kind:'trank',lines:lines.filter(l=>l.rank)});sfx('level');}
+  else if(lines.length){lines.forEach(l=>toast(`${TREE[l.t].name.toUpperCase()} REACHED LV ${l.L}`,{gold:true}));sfx('small');}
+  else sfx('blip');
+  bonus.forEach(e=>toast(`${e.n.toUpperCase()}  +${e.x} XP`,{gold:true}));
+}
+
+/* ---------- actions ---------- */
+function logEntry(entry,el){
+  if(!state.ready){toast('Still loading your save file.');return;}
+  const before=snapshot();const date=gameDate(entry.ts);
+  commitDayLocalOnly(date,[entry],[]);
+  const r=reconcile(date);
+  commitDayLocalOnly(date,r.add,r.remove);
+  persistDay(date,[entry].concat(r.add),r.remove);
+  const after=snapshot();render();
+  celebrate(before,after,entry.x,r.add,el);
+  toast(`+${entry.x} XP · ${entry.n}`,{undo:()=>undo(date,entry.id)});
+}
+/* local-only apply, then one persisted op */
+function commitDayLocalOnly(date,add,remove){const cur=state.days[date]||[];const rm=new Set(remove);let next=cur.filter(e=>!rm.has(e.id)).concat(add);next.sort((a,b)=>a.ts-b.ts);if(next.length)state.days[date]=next;else delete state.days[date];}
+function persistDay(date,add,remove){
+  if(state.mode==='local'){saveLocal();return;}
+  const rm=new Set(remove);dirty[date]=(dirty[date]||0)+1;
+  enqueue(async()=>{
+    try{
+      const ref=db.doc('days/'+date);const snap=await retry(()=>ref.get());
+      let entries=snap.exists?((snap.data().entries)||[]).slice():[];
+      entries=entries.filter(e=>!rm.has(e.id));const have=new Set(entries.map(e=>e.id));
+      add.forEach(e=>{if(!have.has(e.id))entries.push(e);});entries.sort((a,b)=>a.ts-b.ts);
+      if(entries.length)await retry(()=>ref.set({date,entries}));else await retry(()=>ref.delete());
+    }finally{dirty[date]--;if(!dirty[date])delete dirty[date];}
+  });
+}
+function removeEntry(date,id){
+  commitDayLocalOnly(date,[],[id]);const r=reconcile(date);commitDayLocalOnly(date,r.add,r.remove);
+  persistDay(date,r.add,[id].concat(r.remove));render();
+}
+function undo(date,id){removeEntry(date,id);toast('Undone');}
+function logAct(id,el){
+  const a=ACT[id];if(!a)return;
+  if(a.once&&claimed().has(id)){toast('Already claimed');return;}
+  const ts=Date.now();logEntry({id:uid(),ts,a:id,n:a.name,t:a.tree,x:a.xp,k:'log'},el);
+}
+function toggleFav(id){const f=state.settings.favorites;const i=f.indexOf(id);if(i>=0)f.splice(i,1);else f.push(id);saveSettings();render();}
+
+/* ---------- render ---------- */
+const TABS=[['home','HOME','home'],['log','LOG','list'],['trees','TREES','star'],['history','HISTORY','scroll'],['setup','SETUP','cog']];
+function renderNav(){$('#nav').innerHTML=TABS.map(([id,l,ic])=>`<button class="tab" role="tab" aria-selected="${state.tab===id}" data-tab="${id}">${pix(ic)}${l}</button>`).join('');}
+function render(){
+  buildActs();renderNav();
+  const S=snapshot();const app=$('#app');
+  let html='';
+  if(state.tab==='home')html=viewHome(S);
+  else if(state.tab==='log')html=viewLog();
+  else if(state.tab==='trees')html=viewTrees(S);
+  else if(state.tab==='history')html=viewHistory();
+  else html=viewSetup();
+  const keepSearch=document.activeElement&&document.activeElement.id==='q';const selStart=keepSearch?document.activeElement.selectionStart:0;
+  app.innerHTML=html;
+  if(keepSearch){const q=$('#q');if(q){q.focus();try{q.setSelectionRange(selStart,selStart);}catch(e){}}}
+  syncLabel();
+}
+function hudHTML(S){
+  const o=S.o,ti=tierIdx(o.L),pct=o.maxed?100:o.into/o.need*100;
+  return `<div class="px hud" id="hud">
+    <div class="crest">${crest(ti)}</div>
+    <div>
+      <div class="hud-top"><span class="hud-name">SEBAS</span><span class="sync" id="sync"></span></div>
+      <div class="hud-lv"><small>LV</small>${o.L}</div>
+      <div class="hud-rank">${esc(TIERS[ti][1])} <span>· Tier ${TIERS[ti][0]}</span></div>
+    </div>
+    <div class="hud-bar">
+      <div class="bar" role="progressbar" aria-label="XP to next level" aria-valuemin="0" aria-valuemax="${o.need||1}" aria-valuenow="${o.into}"><i id="hud-fill" style="width:${pct.toFixed(2)}%"></i></div>
+      <div class="barmeta"><span>${o.maxed?'<b>MAX LEVEL</b>':`<b>${fmt(o.into)}</b> / ${fmt(o.need)} XP`}</span><span>${fmt(S.total)} total XP</span></div>
+    </div>
+  </div>`;
+}
+function statsHTML(S){
+  const today=gameDate(Date.now());const tx=dayTotal(today);
+  const start=state.settings.startDate||START;const elapsed=Math.max(1,diffDays(start,today)+1);
+  const delta=S.total-(elapsed-1)*PACE;
+  let eta;
+  if(S.o.maxed)eta='DONE';
+  else if(elapsed>=3&&S.total>0){const avg=S.total/elapsed;const days=Math.ceil((XP_TO_100-S.total)/avg);eta=days>3650?'10+ YRS':fmtEta(addDays(today,days));}
+  else eta=fmtEta(addDays(start,365));
+  const streak=currentStreak();
+  return `<div class="stats">
+    <div class="px stat"><span class="lbl">Today</span><span class="v ${tx>=PACE?'good':''}">${tx} XP</span><div class="bar thin"><i style="width:${Math.min(100,tx/PACE*100)}%"></i></div><span class="s">Target ${PACE}</span></div>
+    <div class="px stat"><span class="lbl">Streak</span><span class="v">${streak} ${streak===1?'DAY':'DAYS'}</span><span class="s">100+ XP days</span></div>
+    <div class="px stat"><span class="lbl">Pace</span><span class="v ${delta>=0?'good':'bad'}">${delta>=0?'+':''}${fmt(delta)}</span><span class="s">${delta>=0?'XP ahead of plan':'XP behind plan'}</span></div>
+    <div class="px stat"><span class="lbl">LV 100 ETA</span><span class="v">${eta}</span><span class="s">${elapsed>=3&&S.total>0?'at your current rate':'on the 154/day plan'}</span></div>
+  </div>`;
+}
+function perfectHTML(){
+  const ids=(state.settings.perfect||[]).filter(id=>ACT[id]);
+  if(!ids.length)return `<div class="px pd"><div class="pd-top"><span class="lbl">Perfect Day</span></div><p class="muted" style="margin:0">Pick your daily habits from any activity's edit menu in the Log tab. Hit all of them in one day for +25 XP.</p></div>`;
+  const c=todayCounts();const done=ids.filter(id=>c[id]).length;const full=done===ids.length;
+  return `<div class="px pd ${full?'complete':''}">
+    <div class="pd-top"><span class="lbl">Perfect Day ${full?'· complete':''}</span><b style="color:${full?cv('--gold'):cv('--ink')}">${done}/${ids.length}</b></div>
+    <div class="pd-list">${ids.map(id=>`<span class="chip ${c[id]?'done':''}"><span class="box"></span>${esc(ACT[id].name)}</span>`).join('')}</div>
+    <div class="muted" style="font-size:14px">${full?'+25 XP bonus earned today.':'Finish every habit today for +25 XP.'}</div>
+  </div>`;
+}
+function favsHTML(){
+  const favs=(state.settings.favorites||[]).filter(id=>ACT[id]);const c=todayCounts();const cl=claimed();
+  if(!favs.length)return `<div class="px empty">No favorites yet. Tap the star next to any activity in the Log tab to pin it here.</div>`;
+  return `<div class="favs">${favs.map(id=>{const a=ACT[id],t=TREE[a.tree];const lock=a.once&&cl.has(id);
+    return `<button class="fav" data-log="${id}" ${lock||!state.ready?'disabled':''}>${pix(t.icon,cv(t.color))}<span class="fname">${esc(a.name)}</span><span class="fx"><b>${lock?'CLAIMED':'+'+a.xp+' XP'}</b><em>${c[id]?'×'+c[id]+' today':''}</em></span></button>`;}).join('')}</div>`;
+}
+function miniTreesHTML(S){
+  return `<div class="px mini">${TREES.map(t=>{const s=S.trees[t.id];const pct=s.maxed?100:s.into/s.need*100;
+    return `<div class="mrow">${pix(t.icon,cv(t.color))}<span class="mn">${esc(t.name)} <span>${esc(t.ranks[rankIdx(s.L)])}</span></span><span class="ml" style="color:${cv(t.color)}">LV ${s.L}</span><div class="bar thin"><i style="width:${pct}%;background:${cv(t.color)}"></i></div></div>`;}).join('')}</div>`;
+}
+function viewHome(S){
+  return `${hudHTML(S)}${state.ready?'':'<div class="loading">LOADING SAVE FILE…</div>'}${statsHTML(S)}${perfectHTML()}
+  <div class="sechead"><h2>FAVORITES</h2><span>Tap to log</span></div>${favsHTML()}
+  <div class="sechead"><h2>SKILL TREES</h2><span>7 trees · LV 50 max</span></div>${miniTreesHTML(S)}`;
+}
+function viewLog(){
+  const q=state.q.trim().toLowerCase();const c=todayCounts();const cl=claimed();const fav=new Set(state.settings.favorites);const pd=new Set(state.settings.perfect);
+  const show=Object.values(ACT).filter(a=>(state.settings.showHidden||!a.hidden)&&(state.filter==='all'||a.tree===state.filter||(state.filter==='fav'&&fav.has(a.id)))&&(!q||a.name.toLowerCase().includes(q)));
+  const filters=[['all','All'],['fav','Favorites']].concat(TREES.map(t=>[t.id,t.name]));
+  let groups='';
+  TREES.forEach(t=>{const rows=show.filter(a=>a.tree===t.id);if(!rows.length)return;
+    groups+=`<div class="px group"><div class="ghead">${pix(t.icon,cv(t.color))}<h3 style="color:${cv(t.color)}">${esc(t.name.toUpperCase())}</h3><span>${rows.length}</span></div>
+    ${rows.map(a=>{const lock=a.once&&cl.has(a.id);return `<div class="row">
+      <button class="iconbtn star" data-fav="${a.id}" aria-pressed="${fav.has(a.id)}" aria-label="Favorite ${esc(a.name)}">★</button>
+      <div class="rname">${esc(a.name)}${a.once?'<span class="tag">ONE-TIME</span>':''}${pd.has(a.id)?'<span class="tag pdh">DAILY</span>':''}${a.custom?'<span class="tag">CUSTOM</span>':''}${a.hidden?'<span class="tag">HIDDEN</span>':''}${c[a.id]?`<span class="tag today">×${c[a.id]} TODAY</span>`:''}</div>
+      <button class="iconbtn" data-edit="${a.id}" aria-label="Edit ${esc(a.name)}">⋯</button>
+      <button class="logbtn" data-log="${a.id}" ${lock||!state.ready?'disabled':''}>${lock?'DONE':'+'+a.xp}</button>
+    </div>`;}).join('')}</div>`;});
+  if(!groups)groups=`<div class="px empty">Nothing matches that search.</div>`;
+  const treeOpts=TREES.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  return `<div class="sechead"><h2>QUEST LOG</h2><span>${Object.keys(ACT).length} activities</span></div>
+  <div class="tools">
+    <input class="search" id="q" type="search" placeholder="Search activities" value="${esc(state.q)}" autocomplete="off">
+    <div class="filters">${filters.map(([id,l])=>`<button class="fbtn" data-filter="${id}" aria-pressed="${state.filter===id}">${id!=='all'&&id!=='fav'?pix(TREE[id].icon,cv(TREE[id].color)):''}${esc(l)}</button>`).join('')}</div>
+  </div>
+  <details class="px custom" id="customBox"><summary>+ CUSTOM XP</summary>
+    <div class="fgrid">
+      <label class="field span"><span class="lbl">What you did</span><input id="cu-name" maxlength="80" placeholder="e.g. Fixed roommate's bike brakes"></label>
+      <label class="field"><span class="lbl">Tree</span><select id="cu-tree">${treeOpts}</select></label>
+      <label class="field"><span class="lbl">XP</span><input id="cu-xp" type="number" min="1" max="5000" inputmode="numeric" value="30"></label>
+    </div>
+    <label class="check"><input type="checkbox" id="cu-once"> One-time achievement (only when saving as an activity)</label>
+    <div class="btnrow"><button class="btn gold" data-act="custom-log">LOG IT ONCE</button><button class="btn" data-act="custom-save">SAVE AS ACTIVITY</button></div>
+  </details>
+  ${groups}`;
+}
+function viewTrees(S){
+  return `<div class="sechead"><h2>SKILL TREES</h2><span>New rank every 10 levels</span></div>`+TREES.map(t=>{
+    const s=S.trees[t.id],ri=rankIdx(s.L),pct=s.maxed?100:s.into/s.need*100;
+    const nextRank=ri<4?`${t.ranks[ri+1]} at LV ${(ri+1)*10+1}`:(s.maxed?'Tree maxed':'Final rank');
+    return `<div class="px tree">
+      <div class="tree-top">${pix(t.icon,cv(t.color))}<h3 style="color:${cv(t.color)}">${esc(t.name.toUpperCase())}</h3><span class="tl">LV ${s.L}</span></div>
+      <div class="tree-rank">${esc(t.ranks[ri])} <span class="muted">· next: ${esc(nextRank)}</span></div>
+      <div><div class="bar"><i style="width:${pct}%;background:${cv(t.color)}"></i></div>
+      <div class="barmeta"><span>${s.maxed?'<b>MAX</b>':`<b>${fmt(s.into)}</b> / ${fmt(s.need)} XP`}</span><span>${fmt(s.xp)} XP in tree</span></div></div>
+      <div class="ladder">${t.ranks.map((r,i)=>`<div class="rung ${i<ri?'got':''} ${i===ri?'now':''}" style="${i===ri?`color:${cv(t.color)}`:''}"><small>LV ${i*10+1}</small>${esc(r)}</div>`).join('')}</div>
+      <div class="muted" style="font-size:13px">Cost per level by rank: ${t.costs.join(' / ')} XP</div>
+    </div>`;}).join('')+
+    `<div class="px set"><h3>OVERALL TIERS</h3><dl class="kv">${TIERS.map((tr,i)=>`<dt>Tier ${tr[0]} · LV ${i*20+1}-${i*20+20}</dt><dd>${esc(tr[1])} · ${W[i]} XP/level</dd>`).join('')}</dl></div>`;
+}
+function viewHistory(){
+  const today=gameDate(Date.now());const start=state.settings.startDate||START;
+  const days14=Array.from({length:14},(_,i)=>addDays(today,i-13));
+  const vals=days14.map(d=>dayTotal(d));const maxY=Math.max(250,...vals);
+  const chart=`<div class="px chart"><div class="sechead"><h2>LAST 14 DAYS</h2><span>Gold = ${PACE}+ XP</span></div>
+    <div class="cwrap">${days14.map((d,i)=>{const v=vals[i];return `<div class="cbar ${v>=PACE?'hit':v>0?'part':''} ${d===today?'today':''}" style="height:${(v/maxY*100).toFixed(1)}%" title="${dayLabel(d)}: ${v} XP"></div>`;}).join('')}
+    <div class="pace" style="bottom:${(PACE/maxY*100).toFixed(1)}%"><span>${PACE}</span></div></div>
+    <div class="cdays">${days14.map(d=>`<span>${DOW[parseYmd(d).getDay()][0]}</span>`).join('')}</div></div>`;
+  const dates=Object.keys(state.days).sort().reverse();
+  const shown=dates.slice(0,state.histShown);
+  let list=shown.map(d=>`<div class="px day"><div class="dhead"><b>${dayLabel(d)}${d===today?' · TODAY':''}</b><span>${fmt(dayTotal(d))} XP</span></div>
+    ${state.days[d].slice().reverse().map(e=>{const t=TREE[e.t]||TREE.dis;const tm=new Date(e.ts);const h=tm.getHours(),m=tm.getMinutes();
+      return `<div class="hrow"><time>${((h+11)%12)+1}:${pad(m)}${h<12?'a':'p'}</time><span class="dot" style="background:${cv(t.color)}"></span><span class="hn">${esc(e.n)}</span><span class="hx">+${e.x}</span><button class="del" data-del="${d}|${e.id}" aria-label="Delete entry">✕</button></div>`;}).join('')}</div>`).join('');
+  if(!dates.length)list=`<div class="px empty">Your log is empty. Everything you log shows up here by day, starting ${dayLabel(start)}.</div>`;
+  const more=dates.length>state.histShown?`<button class="btn" data-act="more">SHOW OLDER DAYS</button>`:'';
+  return `${chart}<div class="sechead"><h2>XP LOG</h2><span>${fmt(allEntries().length)} entries</span></div>${list}${more}
+  ${downloads?`<div class="btnrow"><button class="btn" data-act="export">EXPORT CSV</button></div>`:''}`;
+}
+function viewSetup(){
+  const s=state.settings;
+  const pd=(s.perfect||[]).filter(id=>ACT[id]);
+  const custom=(s.custom||[]);
+  return `<div class="sechead"><h2>SETUP</h2><span></span></div>
+  <div class="px set"><h3>SAVE FILE</h3>
+    <dl class="kv"><dt>Started</dt><dd>${dayLabel(s.startDate||START)}, 2026</dd><dt>Day resets</dt><dd>4:00 AM (a 1 AM log counts for the night before)</dd><dt>Daily target</dt><dd>${PACE} XP (LV 100 in 365 days)</dd><dt>Saving</dt><dd>${state.mode==='db'?'To your account, synced across devices':state.mode==='local'?'On this device only':'Loading'}</dd></dl>
+  </div>
+  <div class="px set"><h3>SOUND</h3><label class="check"><input type="checkbox" id="set-sound" ${s.sound?'checked':''}> 8-bit sound effects on log and level up</label></div>
+  <div class="px set"><h3>PERFECT DAY HABITS</h3><p>Log all of these in one day for +25 XP. Add more from any activity's ⋯ menu in the Log tab.</p>
+    <div class="plist">${pd.length?pd.map(id=>`<div class="pitem"><span>${esc(ACT[id].name)}</span><button class="iconbtn" data-unpd="${id}" aria-label="Remove">✕</button></div>`).join(''):'<p>No habits picked.</p>'}</div></div>
+  <div class="px set"><h3>CUSTOM ACTIVITIES</h3><p>Save your own from the + Custom XP box in the Log tab. Edit or delete them from their ⋯ menu.</p>
+    <div class="plist">${custom.length?custom.map(c=>`<div class="pitem"><span>${esc(c.name)} <span class="muted">· ${esc(TREE[c.tree]?TREE[c.tree].name:'')} · ${c.xp} XP</span></span></div>`).join(''):'<p>None yet.</p>'}</div></div>
+  <div class="px set"><h3>ACTIVITY LIST</h3>
+    <label class="check"><input type="checkbox" id="set-hidden" ${s.showHidden?'checked':''}> Show hidden activities in the Log</label>
+    <div class="btnrow"><button class="btn" data-act="restore-values">RESTORE DEFAULT XP VALUES</button><button class="btn" data-act="unhide">UNHIDE ALL</button></div></div>
+  <div class="px set"><h3>RESET PROGRESS</h3><p>Deletes every log entry and puts you back at LV 1. Settings and favorites stay. Type RESET to unlock the button.</p>
+    <div class="fgrid" style="grid-template-columns:1fr auto"><label class="field"><span class="lbl">Confirm</span><input id="set-reset" autocomplete="off" placeholder="RESET"></label><button class="btn danger" data-act="reset" id="reset-btn" disabled style="align-self:end">RESET ALL</button></div></div>`;
+}
+
+/* ---------- edit sheet ---------- */
+function openEdit(id){
+  const a=ACT[id];if(!a)return;const s=state.settings;
+  const treeOpts=TREES.map(t=>`<option value="${t.id}" ${t.id===a.tree?'selected':''}>${esc(t.name)}</option>`).join('');
+  const sh=$('#sheet');
+  sh.innerHTML=`<div class="px" role="dialog" aria-modal="true" aria-label="Edit activity">
+    <h3>${esc(a.name)}</h3>
+    ${a.custom?`<label class="field"><span class="lbl">Name</span><input id="ed-name" maxlength="80" value="${esc(a.name)}"></label><label class="field"><span class="lbl">Tree</span><select id="ed-tree">${treeOpts}</select></label>`:''}
+    <label class="field"><span class="lbl">XP value${a.custom?'':` (default ${defaultXP(id)})`}</span><input id="ed-xp" type="number" min="1" max="5000" inputmode="numeric" value="${a.xp}"></label>
+    <label class="check"><input type="checkbox" id="ed-fav" ${s.favorites.includes(id)?'checked':''}> Favorite (pinned on Home)</label>
+    <label class="check"><input type="checkbox" id="ed-pd" ${s.perfect.includes(id)?'checked':''}> Perfect Day habit</label>
+    <label class="check"><input type="checkbox" id="ed-once" ${a.once?'checked':''}> One-time achievement</label>
+    <label class="check"><input type="checkbox" id="ed-hide" ${a.hidden?'checked':''}> Hide from the Log</label>
+    <div class="btnrow"><button class="btn gold" data-act="ed-save" data-id="${id}">SAVE</button><button class="btn" data-act="ed-close">CANCEL</button>${a.custom?`<button class="btn danger" data-act="ed-delete" data-id="${id}">DELETE</button>`:''}</div>
+  </div>`;
+  sh.hidden=false;const x=$('#ed-xp');if(x)x.focus();
+}
+function defaultXP(id){const d=DEFAULT_ACTS.find(r=>r[1]===id);return d?d[3]:0;}
+function closeSheet(){const sh=$('#sheet');sh.hidden=true;sh.innerHTML='';}
+function saveEdit(id){
+  const a=ACT[id];if(!a)return;const s=state.settings;
+  const xp=Math.round(Number($('#ed-xp').value));
+  if(!(xp>=1&&xp<=5000)){toast('XP must be a whole number from 1 to 5000.');return;}
+  const setIn=(arr,on)=>{const i=arr.indexOf(id);if(on&&i<0)arr.push(id);if(!on&&i>=0)arr.splice(i,1);};
+  setIn(s.favorites,$('#ed-fav').checked);setIn(s.perfect,$('#ed-pd').checked);setIn(s.hidden,$('#ed-hide').checked);
+  const once=$('#ed-once').checked;
+  if(a.custom){const c=s.custom.find(c=>c.id===id);const nm=$('#ed-name').value.trim();if(!nm){toast('Give the activity a name.');return;}c.name=nm;c.tree=$('#ed-tree').value;c.xp=xp;c.once=once;}
+  else{if(xp===defaultXP(id))delete s.overrides[id];else s.overrides[id]=xp;
+    const def=!!(DEFAULT_ACTS.find(r=>r[1]===id)[4]);if(once===def)delete s.onceOverrides[id];else s.onceOverrides[id]=once;}
+  saveSettings();closeSheet();render();toast('Saved');
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.tab){state.tab=t.dataset.tab;render();window.scrollTo(0,0);return;}
+  if(t.dataset.log){logAct(t.dataset.log,t);return;}
+  if(t.dataset.fav){toggleFav(t.dataset.fav);return;}
+  if(t.dataset.edit){openEdit(t.dataset.edit);return;}
+  if(t.dataset.filter){state.filter=t.dataset.filter;render();return;}
+  if(t.dataset.unpd){const p=state.settings.perfect;p.splice(p.indexOf(t.dataset.unpd),1);saveSettings();render();return;}
+  if(t.dataset.del){
+    if(!t.classList.contains('arm')){document.querySelectorAll('.del.arm').forEach(b=>{b.classList.remove('arm');b.textContent='✕';});t.classList.add('arm');t.textContent='DELETE?';return;}
+    const [d,id]=t.dataset.del.split('|');removeEntry(d,id);toast('Entry deleted');return;}
+  const act=t.dataset.act;if(!act)return;
+  if(act==='ed-save')saveEdit(t.dataset.id);
+  else if(act==='ed-close')closeSheet();
+  else if(act==='ed-delete'){const s=state.settings;const id=t.dataset.id;s.custom=s.custom.filter(c=>c.id!==id);['favorites','perfect','hidden'].forEach(k=>{s[k]=s[k].filter(x=>x!==id);});saveSettings();closeSheet();render();toast('Activity deleted. Past log entries stay.');}
+  else if(act==='custom-log'||act==='custom-save'){
+    const name=$('#cu-name').value.trim(),tree=$('#cu-tree').value,xp=Math.round(Number($('#cu-xp').value));
+    if(!name){toast('Name what you did first.');return;}
+    if(!(xp>=1&&xp<=5000)){toast('XP must be a whole number from 1 to 5000.');return;}
+    if(act==='custom-log'){logEntry({id:uid(),ts:Date.now(),a:null,n:name,t:tree,x:xp,k:'custom'},t);}
+    else{const id='c_'+uid();state.settings.custom.push({id,name,tree,xp,once:$('#cu-once').checked});state.settings.favorites.push(id);saveSettings();render();toast('Saved and added to favorites');}
+  }
+  else if(act==='more'){state.histShown+=14;render();}
+  else if(act==='export')exportCSV();
+  else if(act==='restore-values'){state.settings.overrides={};state.settings.onceOverrides={};saveSettings();render();toast('Default XP values restored');}
+  else if(act==='unhide'){state.settings.hidden=[];saveSettings();render();toast('All activities visible');}
+  else if(act==='reset'){if(($('#set-reset').value||'').trim()!=='RESET')return;
+    const dates=Object.keys(state.days);dates.forEach(d=>{const ids=state.days[d].map(e=>e.id);commitDayLocalOnly(d,[],ids);persistDay(d,[],ids);});render();toast('Progress reset to LV 1');}
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='q'){state.q=e.target.value;render();}
+  else if(e.target.id==='set-reset'){const b=$('#reset-btn');if(b)b.disabled=e.target.value.trim()!=='RESET';}
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='set-sound'){state.settings.sound=e.target.checked;saveSettings();if(e.target.checked)sfx('blip');}
+  else if(e.target.id==='set-hidden'){state.settings.showHidden=e.target.checked;saveSettings();}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#sheet').hidden)closeSheet();else if(!$('#overlay').hidden){$('#overlay').hidden=true;}}});
+$('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeSheet();});
+async function exportCSV(){
+  if(!downloads)return;
+  const rows=[['date','time','activity','tree','xp','type']];
+  Object.keys(state.days).sort().forEach(d=>state.days[d].forEach(e=>{const tm=new Date(e.ts);rows.push([d,`${pad(tm.getHours())}:${pad(tm.getMinutes())}`,e.n,(TREE[e.t]||{}).name||e.t,e.x,e.k]);}));
+  const csv=rows.map(r=>r.map(v=>{const s=String(v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\n');
+  try{await downloads.save({filename:`sebas-xp-log-${gameDate(Date.now())}.csv`,data:csv});}
+  catch(err){if(err&&err.code!=='declined')toast('Export is not available here.');}
+}
+
+/* refresh day-dependent numbers when the game day rolls over */
+let lastDay=gameDate(Date.now());
+setInterval(()=>{const d=gameDate(Date.now());if(d!==lastDay){lastDay=d;if(state.ready)render();}},60000);
+
+buildActs();render();initStore();
+})();
+</script>

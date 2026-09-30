@@ -1,0 +1,25 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sebas XP pixel art</title>
+<!-- Preview every sprite and icon: http://localhost:8000/tools/art.html  (edit them in js/pixel.js) -->
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body{padding:16px}
+  .row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;background:var(--panel);border:2px solid var(--line)}
+  .cell .hero-svg{width:128px}
+  .cell .ic{width:32px;height:32px;color:var(--gold)}
+  .cell small{font-family:var(--f-display);font-size:8px;color:var(--dim)}
+  h2{font-family:var(--f-display);font-size:11px;color:var(--gold)}
+</style>
+<h2>HERO BY TIER</h2><div class="row" id="heroes"></div>
+<h2>ICONS</h2><div class="row" id="icons"></div>
+<h2>CRESTS</h2><div class="row" id="crests"></div>
+<script type="module">
+  import { heroSprite, ICONS, pix, crest } from '../js/pixel.js';
+  import { TIERS } from '../js/config.js';
+  document.getElementById('heroes').innerHTML = TIERS.map((t, i) => `<div class="cell">${heroSprite(i)}<small>${t[0]} ${t[1]}</small></div>`).join('');
+  document.getElementById('icons').innerHTML = Object.keys(ICONS).map(k => `<div class="cell">${pix(k)}<small>${k}</small></div>`).join('');
+  document.getElementById('crests').innerHTML = TIERS.map((t, i) => `<div class="cell"><div class="crest">${crest(i)}</div><small>${t[1]}</small></div>`).join('');
+</script>
