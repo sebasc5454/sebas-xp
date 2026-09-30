@@ -226,6 +226,6 @@ export const DEFAULT_SETTINGS = {
    Both are safe to publish: the database rules in supabase/schema.sql only let you read your own data.
    Leave them empty to keep everything on-device only. See README → Cloud sync. */
 export const SYNC = {
-  url: '',    // e.g. 'https://abcdefghijklmnop.supabase.co'
-  key: ''     // e.g. 'sb_publishable_...' (or the older 'eyJ...' anon key)
+  url: 'https://gvxmzilrodwoyycxtqen.supabase.co',
+  key: 'sb_publishable_hhQI6ipINNzh0giHSdn0Zw_hj9zQd6t'
 };
